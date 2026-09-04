@@ -1,0 +1,263 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><button class="menu-toggle" type="button" (click)="toggleMenu()" [attr.aria-expanded]="isMenuOpen" aria-label="Abrir opciones">☰</button><span class="brand-mark">P</span><span>Prandina Performance Lab</span></div>
+    <div class="workspace-label">{{ isAdmin ? 'GESTIÓN' : 'MI ENTRENAMIENTO' }}</div>
+    <nav *ngIf="isMenuOpen && isAdmin">
+      <button class="nav-item" [class.active]="activeView === 'Resumen'" (click)="activeView = 'Resumen'"><span>◈</span> Resumen</button>
+      <button class="nav-item" [class.active]="activeView === 'Socios'" (click)="activeView = 'Socios'"><span>♙</span> Socios <b>{{ members.length }}</b></button>
+      <button class="nav-item" [class.active]="activeView === 'Rutinas'" (click)="activeView = 'Rutinas'"><span>▦</span> Rutinas</button>
+      <button class="nav-item" [class.active]="activeView === 'Membresías'" (click)="activeView = 'Membresías'"><span>▣</span> Membresías</button>
+    </nav>
+    <div class="sidebar-bottom"><button class="nav-item" *ngIf="isAdmin"><span>⚙</span> Configuración</button></div>
+  </aside>
+  <main class="main-content">
+    <header class="topbar"><div><p class="eyebrow">{{ currentDateLabel }}</p><h1 class="admin-heading">{{ isAdmin ? 'Panel administrativo' : 'Portal del socio' }}</h1></div><div class="top-actions"><span class="status-chip">Sistema activo</span></div></header>
+    <section class="welcome-row" *ngIf="isAdmin"><div><div class="welcome-title"><h2>{{ activeView }}</h2></div><p>Tené todo bajo control y ayudá a tus socios a alcanzar sus objetivos.</p></div><button class="primary-button small-button socios-add-button" *ngIf="activeView === 'Socios'" (click)="openMemberModal()"><span>＋</span> Nuevo socio</button><button class="primary-button small-button socios-add-button" *ngIf="activeView === 'Rutinas'" (click)="openRoutineAdmin()"><span>＋</span> Nueva rutina</button><button class="primary-button small-button socios-add-button" *ngIf="activeView === 'Membresías'" (click)="openMembershipAdmin()"><span>＋</span> Nueva membresía</button></section>
+    <section class="panel" *ngIf="isAdmin && activeView === 'Socios'">
+      <div class="panel-heading"><div><h3>Socios</h3><p>Gestión de pagos, edición y estado de membresías.</p></div></div>
+      <div class="toolbar"><label class="search"><span>⌕</span><input [(ngModel)]="searchTerm" placeholder="Buscar socio..." /></label><button class="filter-button" type="button">Filtrar <span>≡</span></button></div>
+      <div class="table-wrap"><table><thead><tr><th>SOCIO</th><th>MEMBRESÍA</th><th>VENCIMIENTO</th><th>RUTINA</th><th>ESTADO</th><th>ACCIONES</th></tr></thead><tbody><tr *ngFor="let member of filteredMembers"><td><div class="member-name"><span class="avatar" [style.background]="member.color">{{ member.initials }}</span><span><strong>{{ member.name }}</strong><small>{{ member.email }}</small></span></div></td><td>{{ member.plan }}</td><td>{{ member.expires }}</td><td><span class="routine-tag" [class.empty]="member.routine === 'Sin asignar'">{{ member.routine }}</span></td><td><span class="status" [class.paid]="member.status === 'Pago'" [class.unpaid]="member.status === 'No pago'">{{ member.status }}</span></td><td class="actions"><button class="more-button" (click)="openSocioPortal(member)" title="Ver portal del socio">👤</button><button class="more-button" (click)="openMemberModal(member)" title="Editar socio">✎</button><button class="more-button" (click)="openRoutineModal(member)" title="Asignar rutina">↗</button><button class="more-button" (click)="managePayment(member)" title="Gestionar pago">💳</button><button class="more-button danger" (click)="removeMember(member)" title="Eliminar socio">×</button></td></tr></tbody></table></div>
+    </section>
+    <section class="panel" *ngIf="isAdmin && activeView === 'Rutinas'">
+      <div class="panel-heading"><div><h3>Rutinas</h3><p>Editar, crear, eliminar y ver ejercicios asociados.</p></div></div>
+      <div class="table-wrap"><table><thead><tr><th>NOMBRE</th><th>NIVEL</th><th>DURACIÓN</th><th>ENFOQUE</th><th>EJERCICIOS</th><th>ACCIONES</th></tr></thead><tbody><tr *ngFor="let routine of routines"><td><strong>{{ routine.name }}</strong></td><td>{{ routine.level }}</td><td>{{ routine.duration }}</td><td>{{ routine.focus }}</td><td>{{ routine.exercises }}</td><td class="actions"><button class="more-button" (click)="openRoutineAdmin(routine)" title="Editar rutina">✎</button><button class="more-button" (click)="openRoutineExercises(routine)" title="Ver ejercicios">↗</button><button class="more-button danger" (click)="deleteRoutine(routine)" title="Eliminar rutina">×</button></td></tr></tbody></table></div>
+    </section>
+    <section class="panel" *ngIf="isAdmin && activeView === 'Membresías'">
+      <div class="panel-heading"><div><h3>Membresías</h3><p>Gestionar planes, precios y descripción de membresías.</p></div></div>
+      <div class="membership-grid">
+        <article class="membership-card" *ngFor="let membership of memberships; let i = index" [class.featured]="i === 1">
+          <span class="membership-badge">{{ membership.name }}</span>
+          <div class="membership-price">
+            <strong>{{ membership.price | currency:'ARS':'symbol':'1.0-0' }}</strong>
+            <small>/ {{ membership.duration }}</small>
+          </div>
+          <p class="membership-description">{{ membership.description }}</p>
+          <ul class="membership-benefits">
+            <li>Acceso ilimitado</li>
+            <li>Seguimiento del progreso</li>
+            <li>Atención prioritaria</li>
+          </ul>
+          <div class="membership-actions">
+            <button class="outline-button" type="button" (click)="openMembershipAdmin(membership)">Editar</button>
+            <button class="more-button danger" type="button" (click)="deleteMembership(membership)" title="Eliminar membresía">×</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section class="panel socio-dashboard" *ngIf="activeView === 'Mi Portal'">
+      <p class="api-message error-text" *ngIf="socioAccessMessage">{{ socioAccessMessage }}</p>
+      <ng-container *ngIf="selectedSocioForDashboard">
+      <div class="socio-header">
+        <button class="btn-back" *ngIf="isAdmin" (click)="closeSocioPortal()">← Volver</button>
+        <div class="socio-info">
+          <div class="socio-avatar" [style.background]="selectedSocioForDashboard.color">{{ selectedSocioForDashboard.initials }}</div>
+          <div>
+            <h2>{{ selectedSocioForDashboard.name }}</h2>
+            <p class="socio-email">{{ selectedSocioForDashboard.email }}</p>
+          </div>
+        </div>
+        <div class="socio-status-pill" [class.paid]="selectedSocioForDashboard.status === 'Pago'" [class.unpaid]="selectedSocioForDashboard.status === 'No pago'">
+          {{ selectedSocioForDashboard.status }}
+        </div>
+      </div>
+
+      <div class="socio-tabs">
+        <button type="button" class="socio-tab" [class.active]="socioDashboardTab === 'resumen'" (click)="setSocioDashboardTab('resumen')">Resumen</button>
+        <button type="button" class="socio-tab" [class.active]="socioDashboardTab === 'ejercicios'" (click)="setSocioDashboardTab('ejercicios')">Biblioteca</button>
+        <button type="button" class="socio-tab" [class.active]="socioDashboardTab === 'pagos'" (click)="setSocioDashboardTab('pagos')">Cuota</button>
+        <button type="button" class="socio-tab" [class.active]="socioDashboardTab === 'rutina'" (click)="setSocioDashboardTab('rutina')">Rutina</button>
+      </div>
+
+      <ng-container *ngIf="socioDashboardTab === 'resumen'">
+        <div class="socio-metrics">
+          <div class="metric-card">
+            <span class="metric-label">Plan actual</span>
+            <strong>{{ selectedSocioForDashboard.plan }}</strong>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Vencimiento</span>
+            <strong>{{ selectedSocioForDashboard.expires }}</strong>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Estado</span>
+            <span class="status" [class.paid]="selectedSocioForDashboard.status === 'Pago'" [class.unpaid]="selectedSocioForDashboard.status === 'No pago'">{{ selectedSocioForDashboard.status }}</span>
+          </div>
+        </div>
+
+        <div class="socio-readonly-grid">
+          <div class="socio-panel">
+            <h3>Rutina (solo ver)</h3>
+            <div class="payment-info">
+              <div class="payment-item">
+                <span>Rutina asignada</span>
+                <strong>{{ memberAssignedRoutine?.name || selectedSocioForDashboard.routine || 'Sin asignar' }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Nivel</span>
+                <strong>{{ memberAssignedRoutine?.level || '—' }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Duración</span>
+                <strong>{{ memberAssignedRoutine?.duration || '—' }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Enfoque</span>
+                <strong>{{ memberAssignedRoutine?.focus || '—' }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="socio-panel">
+            <h3>Membresía (solo ver)</h3>
+            <div class="payment-info">
+              <div class="payment-item">
+                <span>Plan</span>
+                <strong>{{ memberMembership?.name || selectedSocioForDashboard.plan }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Precio</span>
+                <strong>{{ memberMembership ? (memberMembership.price | currency:'ARS':'symbol':'1.0-0') : '—' }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Duración</span>
+                <strong>{{ memberMembership?.duration || '—' }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Descripción</span>
+                <strong>{{ memberMembership?.description || 'Sin descripción' }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="socio-panels-grid">
+          <div class="socio-panel">
+            <h3>Vista rutina calendario</h3>
+            <div class="weekly-schedule">
+              <div class="day-card" *ngFor="let day of weekDays">
+                <div class="day-name">{{ day }}</div>
+                <div class="day-workout">
+                  <strong>{{ weekSchedule[day]?.name || 'Descanso' }}</strong>
+                  <small *ngIf="weekSchedule[day]">{{ weekSchedule[day].exercises }} ejercicios · {{ weekSchedule[day].focus }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="socio-panel">
+            <h3>Vista cuota pago</h3>
+            <div class="payment-info">
+              <div class="payment-item">
+                <span>Última cuota</span>
+                <strong>{{ selectedSocioForDashboard.plan }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Próximo vencimiento</span>
+                <strong>{{ selectedSocioForDashboard.expires }}</strong>
+              </div>
+              <div class="payment-item">
+                <span>Estado del pago</span>
+                <span class="status" [class.paid]="selectedSocioForDashboard.status === 'Pago'" [class.unpaid]="selectedSocioForDashboard.status === 'No pago'">{{ selectedSocioForDashboard.status }}</span>
+              </div>
+              <button class="primary-button" style="margin-top: 1rem; width: 100%;" (click)="managePayment(selectedSocioForDashboard)">Gestionar pago</button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <div class="socio-exercise-section" *ngIf="socioDashboardTab === 'ejercicios'">
+        <h3>Biblioteca de ejercicios</h3>
+        <div class="api-filters">
+          <label class="search"><span>⌕</span><input [(ngModel)]="apiSearch" placeholder="Buscar ejercicio o músculo..." /></label>
+          <select [(ngModel)]="apiCategory" aria-label="Filtrar por grupo muscular">
+            <option *ngFor="let category of exerciseCategories" [value]="category">{{ category }}</option>
+          </select>
+        </div>
+        <p class="api-message" *ngIf="apiLoading">Cargando ejercicios...</p>
+        <p class="api-message error-text" *ngIf="apiError">{{ apiError }}</p>
+        <div class="exercise-grid" *ngIf="!apiLoading && !apiError">
+          <article class="exercise-card" *ngFor="let exercise of filteredExercises">
+            <div class="exercise-top"><span class="exercise-icon">↗</span><span class="api-category">{{ exercise.category?.name || 'Entrenamiento' }}</span></div>
+            <h4>{{ getExerciseName(exercise) }}</h4>
+            <div class="exercise-tags"><span *ngFor="let group of getExerciseGroups(exercise)">{{ group }}</span></div>
+            <p class="exercise-description"><strong>Cómo hacerlo</strong>{{ getExerciseDescription(exercise) }}</p>
+          </article>
+          <p class="api-message" *ngIf="filteredExercises.length === 0">No encontramos ejercicios con esos filtros.</p>
+        </div>
+      </div>
+
+      <div class="socio-panel" *ngIf="socioDashboardTab === 'pagos'">
+        <h3>Vista cuota pago</h3>
+        <div class="payment-info">
+          <div class="payment-item">
+            <span>Última cuota</span>
+            <strong>{{ selectedSocioForDashboard.plan }}</strong>
+          </div>
+          <div class="payment-item">
+            <span>Próximo vencimiento</span>
+            <strong>{{ selectedSocioForDashboard.expires }}</strong>
+          </div>
+          <div class="payment-item">
+            <span>Estado del pago</span>
+            <span class="status" [class.paid]="selectedSocioForDashboard.status === 'Pago'" [class.unpaid]="selectedSocioForDashboard.status === 'No pago'">{{ selectedSocioForDashboard.status }}</span>
+          </div>
+          <button class="primary-button" style="margin-top: 1rem; width: 100%;" (click)="managePayment(selectedSocioForDashboard)">Gestionar pago</button>
+        </div>
+      </div>
+
+      <div class="socio-panel" *ngIf="socioDashboardTab === 'rutina'">
+        <h3>Vista rutina calendario</h3>
+        <div class="weekly-schedule">
+          <div class="day-card" *ngFor="let day of weekDays">
+            <div class="day-name">{{ day }}</div>
+            <div class="day-workout">
+              <strong>{{ weekSchedule[day]?.name || 'Descanso' }}</strong>
+              <small *ngIf="weekSchedule[day]">{{ weekSchedule[day].exercises }} ejercicios · {{ weekSchedule[day].focus }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      </ng-container>
+    </section>
+    <section class="stats-grid" *ngIf="isAdmin && activeView === 'Resumen'">
+      <article class="stat-card"><div class="stat-icon green">♙</div><div><span>Socios activos</span><strong>{{ activeMembersCount }}</strong><small class="positive">Datos en vivo</small></div></article>
+      <article class="stat-card"><div class="stat-icon blue">◷</div><div><span>Por vencer</span><strong>{{ expiringMembersCount }}</strong><small class="warning">Requieren atención</small></div></article>
+      <article class="stat-card"><div class="stat-icon orange">▤</div><div><span>Rutinas asignadas</span><strong>{{ assignedRoutinesCount }}</strong><small class="positive">Datos en vivo</small></div></article>
+      <article class="stat-card"><div class="stat-icon pink">$</div><div><span>Ingresos del mes</span><strong>{{ incomeDisplay }}</strong><small class="positive">↑ 16% <em>vs. mes anterior</em></small></div></article>
+      <article class="stat-card"><div class="stat-icon red">◌</div><div><span>Gastos del mes</span><strong>{{ expensesDisplay }}</strong><small class="warning">↓ 8% <em>vs. mes anterior</em></small></div></article>
+    </section>
+    <section class="summary-panel panel" *ngIf="isAdmin && activeView === 'Resumen'">
+      <div class="panel-heading"><div><h3>Estadísticas</h3><p>Rendimiento general del gimnasio en el último mes</p></div></div>
+      <div class="summary-kpis">
+        <div class="summary-kpi"><span>Ingresos netos</span><strong>{{ netDisplay }}</strong></div>
+        <div class="summary-kpi"><span>Asistencia</span><strong>{{ summaryMetrics.attendance }}%</strong></div>
+        <div class="summary-kpi"><span>Adherencia</span><strong>{{ summaryMetrics.adherence }}%</strong></div>
+        <div class="summary-kpi"><span>Retención</span><strong>{{ summaryMetrics.retention }}%</strong></div>
+      </div>
+      <div class="progress-list">
+        <div class="progress-item"><label>Socios activos</label><div class="progress-track"><span [style.width.%]="attendanceProgress"></span></div><strong>{{ summaryMetrics.attendance }}%</strong></div>
+        <div class="progress-item"><label>Rutinas cumplidas</label><div class="progress-track"><span [style.width.%]="summaryMetrics.adherence"></span></div><strong>{{ summaryMetrics.adherence }}%</strong></div>
+        <div class="progress-item"><label>Retención anual</label><div class="progress-track"><span [style.width.%]="summaryMetrics.retention"></span></div><strong>{{ summaryMetrics.retention }}%</strong></div>
+      </div>
+    </section>
+    <section class="expense-panel panel" *ngIf="isAdmin && activeView === 'Resumen'">
+      <div class="panel-heading"><div><h3>Gastos</h3><p>Control de egresos del mes</p></div></div>
+      <div class="expense-total"><span>Total mensual</span><strong>{{ expensesDisplay }}</strong></div>
+      <div class="expense-list">
+        <div class="expense-item"><span>Sueldos</span><strong>$180.000</strong></div>
+        <div class="expense-item"><span>Servicios</span><strong>$95.000</strong></div>
+        <div class="expense-item"><span>Equipamiento</span><strong>$120.000</strong></div>
+        <div class="expense-item"><span>Marketing</span><strong>$85.000</strong></div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="modal-backdrop" *ngIf="isMemberModalOpen" (click)="isMemberModalOpen = false"><form class="modal-content" (click)="$event.stopPropagation()" (ngSubmit)="saveMember()"><button type="button" class="btn-close" (click)="isMemberModalOpen = false">×</button><p class="eyebrow">{{ editingMember ? 'EDITAR REGISTRO' : 'NUEVO REGISTRO' }}</p><h2>{{ editingMember ? 'Editar socio' : 'Agregar socio' }}</h2><label>Nombre completo<input name="name" [(ngModel)]="newMember.name" required placeholder="Ej. Camila Gómez" /></label><label>Correo electrónico<input name="email" type="email" [(ngModel)]="newMember.email" required placeholder="camila@email.com" /></label><label>Tipo de membresía<select name="plan" [(ngModel)]="newMember.plan"><option>Plan mensual</option><option>Plan trimestral</option><option>Plan anual</option></select></label><button class="primary-button" type="submit">{{ editingMember ? 'Guardar cambios' : 'Guardar socio' }}</button></form></div>
+<div class="modal-backdrop" *ngIf="isRoutineModalOpen" (click)="isRoutineModalOpen = false"><div class="modal-content routine-modal" (click)="$event.stopPropagation()"><button class="btn-close" (click)="isRoutineModalOpen = false">×</button><p class="eyebrow">ASIGNAR PLAN</p><h2>{{ selectedMember?.name }}</h2><p class="modal-subtitle">Elegí una rutina armada para este socio.</p><button class="routine-choice" *ngFor="let routine of routines" (click)="assignRoutine(routine)"><span class="routine-symbol">↗</span><span><strong>{{ routine.name }}</strong><small>{{ routine.level }} · {{ routine.exercises }} ejercicios · {{ routine.duration }}</small></span><span>→</span></button></div></div>
+<div class="modal-backdrop" *ngIf="isRoutineAdminModalOpen" (click)="isRoutineAdminModalOpen = false"><form class="modal-content auth-modal" (click)="$event.stopPropagation()" (ngSubmit)="saveRoutine()"><button type="button" class="btn-close" (click)="isRoutineAdminModalOpen = false">×</button><p class="eyebrow">ADMINISTRAR RUTINAS</p><h2>{{ editingRoutine ? 'Editar rutina' : 'Nueva rutina' }}</h2><p class="modal-subtitle">Agregá o modificá un plan para asignarlo después a tus socios.</p><label>Nombre de la rutina<input name="routineName" [(ngModel)]="newRoutine.name" required placeholder="Ej. Pecho y tríceps" /></label><label>Nivel<select name="routineLevel" [(ngModel)]="newRoutine.level"><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select></label><label>Enfoque<input name="routineFocus" [(ngModel)]="newRoutine.focus" required placeholder="Ej. Tren superior" /></label><div class="routine-form-row"><label>Duración<input name="routineDuration" [(ngModel)]="newRoutine.duration" required placeholder="45 min" /></label><label>Ejercicios<input name="routineExercises" type="number" min="1" [(ngModel)]="newRoutine.exercises" required /></label></div><button class="primary-button auth-submit" type="submit">{{ editingRoutine ? 'Guardar cambios' : 'Agregar rutina' }}</button></form></div>
+<div class="modal-backdrop" *ngIf="isMembershipModalOpen" (click)="isMembershipModalOpen = false"><form class="modal-content auth-modal membership-form" (click)="$event.stopPropagation()" (ngSubmit)="saveMembership()"><button type="button" class="btn-close" (click)="isMembershipModalOpen = false">×</button><p class="eyebrow">{{ editingMembership ? 'EDITAR MEMBRESÍA' : 'NUEVA MEMBRESÍA' }}</p><h2>{{ editingMembership ? 'Editar plan' : 'Crear plan' }}</h2><label>Nombre del plan<input name="membershipName" [(ngModel)]="newMembership.name" required placeholder="Ej. Plan mensual" /></label><label>Precio (ARS)<input name="membershipPrice" type="number" min="0" step="1000" [(ngModel)]="newMembership.price" required placeholder="15000" /></label><label>Duración<input name="membershipDuration" [(ngModel)]="newMembership.duration" required placeholder="Ej. 30 días" /></label><label class="description-field">Descripción<textarea name="membershipDescription" [(ngModel)]="newMembership.description" placeholder="Ej. Acceso ilimitado a todas las instalaciones"></textarea></label><button class="primary-button auth-submit" type="submit">{{ editingMembership ? 'Guardar cambios' : 'Crear membresía' }}</button></form></div>
+<div class="modal-backdrop" *ngIf="isRoutineExerciseModalOpen" (click)="isRoutineExerciseModalOpen = false"><div class="modal-content routine-modal" (click)="$event.stopPropagation()"><button type="button" class="btn-close" (click)="isRoutineExerciseModalOpen = false">×</button><p class="eyebrow">EJERCICIOS</p><h2>{{ selectedRoutineForExercises?.name }}</h2><p class="modal-subtitle">Vista rápida de la rutina y recomendaciones de trabajo.</p><div class="exercise-grid" *ngIf="filteredExercises.length"><article class="exercise-card" *ngFor="let exercise of filteredExercises.slice(0, 4)"><div class="exercise-top"><span class="exercise-icon">↗</span><span class="api-category">{{ exercise.category?.name || 'Entrenamiento' }}</span></div><h4>{{ getExerciseName(exercise) }}</h4><div class="exercise-tags"><span *ngFor="let group of getExerciseGroups(exercise)">{{ group }}</span></div></article></div><p class="api-message" *ngIf="!filteredExercises.length">No hay ejercicios disponibles para mostrar.</p></div></div>
+<div class="modal-backdrop" *ngIf="isPaymentModalOpen" (click)="isPaymentModalOpen = false"><form class="modal-content payment-modal" (click)="$event.stopPropagation()" (ngSubmit)="confirmPayment()"><button type="button" class="btn-close" (click)="isPaymentModalOpen = false">×</button><p class="eyebrow">SIMULACIÓN DE PAGO</p><h2>{{ paymentPlan }}</h2><div class="payment-total"><span>Total simulado</span><strong>{{ paymentAmount }}</strong></div><div class="payment-methods"><button type="button" [class.active]="paymentMethod === 'Tarjeta'" (click)="paymentMethod = 'Tarjeta'">Tarjeta</button><button type="button" [class.active]="paymentMethod === 'Mercado Pago'" (click)="paymentMethod = 'Mercado Pago'">Mercado Pago</button></div><label>Nombre completo<input name="paymentName" [(ngModel)]="paymentForm.name" required placeholder="Nombre del titular" /></label><label>Correo para el comprobante<input name="paymentEmail" type="email" [(ngModel)]="paymentForm.email" required placeholder="tu@email.com" /></label><label *ngIf="paymentMethod === 'Tarjeta'">Últimos 4 números de la tarjeta<input name="lastFour" inputmode="numeric" maxlength="4" [(ngModel)]="paymentForm.lastFour" placeholder="1234" /></label><p class="payment-note">Esto es una demostración académica. No se realiza ningún cobro ni se guardan datos bancarios.</p><p class="payment-error" *ngIf="paymentError">{{ paymentError }}</p><button class="primary-button auth-submit" type="submit">Simular pago</button></form></div>
+<div class="modal-backdrop" *ngIf="isReceiptModalOpen" (click)="isReceiptModalOpen = false"><div class="modal-content receipt-modal" (click)="$event.stopPropagation()"><button type="button" class="btn-close" (click)="isReceiptModalOpen = false">×</button><div class="receipt-check">✓</div><p class="eyebrow">PAGO SIMULADO</p><h2>Comprobante listo</h2><p class="modal-subtitle">Comprobante de demostración preparado para {{ paymentReceipt?.email }}.</p><div class="receipt-details"><span>Número<strong>{{ paymentReceipt?.number }}</strong></span><span>Plan<strong>{{ paymentReceipt?.plan }}</strong></span><span>Importe<strong>{{ paymentReceipt?.amount }}</strong></span><span>Medio de pago<strong>{{ paymentReceipt?.method }}</strong></span><span>Fecha<strong>{{ paymentReceipt?.date }}</strong></span></div><div class="receipt-actions"><button class="primary-button" type="button" (click)="downloadReceipt()">Descargar comprobante</button><button class="outline-button" type="button" (click)="emailReceipt()">Preparar correo</button></div></div></div>
+<div class="modal-backdrop auth-backdrop" *ngIf="isAuthModalOpen" (click)="isAuthModalOpen = false"><form class="modal-content auth-modal" (click)="$event.stopPropagation()" (ngSubmit)="submitAuth()"><button type="button" class="btn-close" (click)="isAuthModalOpen = false">×</button><div class="auth-brand"><span class="brand-mark">G</span><strong>Gym Prandina</strong></div><ng-container *ngIf="authMode === 'choice'; else authForm"><p class="eyebrow">BIENVENIDO</p><h2>Acceder</h2><p class="modal-subtitle">Elegí cómo querés continuar en Gym Prandina.</p><div class="auth-options"><button class="primary-button auth-submit" type="button" (click)="openAuthModal('login')">Iniciar sesión</button><button class="auth-option-secondary" type="button" (click)="openAuthModal('register')">Crear cuenta</button></div></ng-container><ng-template #authForm><p class="eyebrow">ACCESO DE ADMINISTRACIÓN</p><h2>{{ authMode === 'login' ? 'Iniciar sesión' : 'Crear tu cuenta' }}</h2><p class="modal-subtitle">{{ authMode === 'login' ? 'Ingresá para administrar tu gimnasio.' : 'Registrate para comenzar a gestionar socios.' }}</p><ng-container *ngIf="authMode === 'login'; else registerFields"><label>Correo electrónico<input name="loginEmail" type="email" [(ngModel)]="loginForm.email" required placeholder="admin@gymprandina.com" /></label><label>Contraseña<input name="loginPassword" type="password" [(ngModel)]="loginForm.password" required placeholder="Tu contraseña" /></label><button class="primary-button auth-submit" type="submit" [disabled]="authSubmitting">{{ authSubmitting ? 'Ingresando...' : 'Ingresar' }}</button><button class="switch-auth" type="button" (click)="openAuthModal('register')">¿No tenés cuenta? <strong>Crear cuenta</strong></button></ng-container><ng-template #registerFields><label>Nombre completo<input name="registerName" [(ngModel)]="registerForm.name" required placeholder="Juan Prandina" /></label><label>Correo electrónico<input name="registerEmail" type="email" [(ngModel)]="registerForm.email" required placeholder="admin@gymprandina.com" /></label><label>Contraseña<input name="registerPassword" type="password" [(ngModel)]="registerForm.password" required placeholder="Mínimo 6 caracteres" /></label><label>Confirmar contraseña<input name="confirmPassword" type="password" [(ngModel)]="registerForm.confirmPassword" required placeholder="Repetí tu contraseña" /></label><button class="primary-button auth-submit" type="submit" [disabled]="authSubmitting">{{ authSubmitting ? 'Creando cuenta...' : 'Crear cuenta' }}</button><button class="switch-auth" type="button" (click)="openAuthModal('login')">¿Ya tenés cuenta? <strong>Iniciar sesión</strong></button></ng-template></ng-template></form></div>
+<div class="auth-error-banner" *ngIf="isAuthModalOpen && authError">{{ authError }}</div>

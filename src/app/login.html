@@ -1,0 +1,35 @@
+<main class="login-page">
+  <form class="login-card" *ngIf="mode !== 'forgot'" (ngSubmit)="submit()">
+    <div class="login-brand"><span class="brand-mark">P</span><strong>Prandina Performance Lab</strong></div>
+    <p class="eyebrow">ADMINISTRACIÓN DEL GIMNASIO</p>
+    <h1>{{ mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta' }}</h1>
+    <p class="subtitle">{{ mode === 'login' ? 'Ingresá para gestionar socios y rutinas.' : 'Registrate para comenzar a administrar.' }}</p>
+    <p class="error" *ngIf="error">{{ error }}</p>
+    <ng-container *ngIf="mode === 'login'; else registerFields">
+      <label>Correo electrónico<input name="loginEmail" type="text" inputmode="email" [(ngModel)]="login.email" required placeholder="juan@admin.com"></label>
+      <label>Contraseña<input name="loginPassword" type="password" [(ngModel)]="login.password" required placeholder="Tu contraseña"></label>
+      <button class="submit-button" type="submit">Ingresar</button>
+      <button class="forgot-button" type="button" (click)="mode = 'forgot'; error = ''">¿Olvidaste tu contraseña?</button>
+      <button class="switch-button" type="button" (click)="mode = 'register'; error = ''">¿No tenés cuenta? <strong>Crear cuenta</strong></button>
+    </ng-container>
+    <ng-template #registerFields>
+      <label>Nombre completo<input name="registerName" [(ngModel)]="register.name" required placeholder="Juan Prandina"></label>
+      <label>Correo electrónico<input name="registerEmail" type="text" inputmode="email" [(ngModel)]="register.email" required placeholder="juan@admin.com"></label>
+      <label>Contraseña<input name="registerPassword" type="password" [(ngModel)]="register.password" required placeholder="Mínimo 6 caracteres"></label>
+      <label>Confirmar contraseña<input name="confirmPassword" type="password" [(ngModel)]="register.confirmPassword" required placeholder="Repetí tu contraseña"></label>
+      <button class="submit-button" type="submit" [disabled]="isSubmitting">{{ isSubmitting ? 'Creando cuenta...' : 'Crear cuenta' }}</button>
+      <button class="switch-button" type="button" (click)="mode = 'login'; error = ''">¿Ya tenés cuenta? <strong>Iniciar sesión</strong></button>
+    </ng-template>
+  </form>
+  <form class="login-card" *ngIf="mode === 'forgot'" (ngSubmit)="resetPassword()">
+    <div class="login-brand"><span class="brand-mark">P</span><strong>Prandina Performance Lab</strong></div>
+    <p class="eyebrow">RECUPERAR ACCESO</p>
+    <h1>Restablecer contraseña</h1>
+    <p class="subtitle">Ingresá tu correo y te enviaremos un enlace para crear una nueva contraseña.</p>
+    <p class="success" *ngIf="resetSent">Revisá tu correo para restablecer la contraseña.</p>
+    <p class="error" *ngIf="error">{{ error }}</p>
+    <label>Correo electrónico<input name="resetEmail" type="email" [(ngModel)]="login.email" required placeholder="admin@gymprandina.com"></label>
+    <button class="submit-button" type="submit">Enviar enlace</button>
+    <button class="switch-button" type="button" (click)="mode = 'login'; error = ''; resetSent = false">Volver a iniciar sesión</button>
+  </form>
+</main>

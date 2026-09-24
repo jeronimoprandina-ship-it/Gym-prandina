@@ -21,6 +21,11 @@ export class GymDataService {
   private readonly destroyRef = inject(DestroyRef);
 
   private membersSubscription?: Subscription;
+  /** Evita que dos emisiones seguidas del listener creen dos fichas. */
+  private creatingMember = false;
+
+  /** Ultimo error de Firestore, para poder mostrarlo en vez de ocultarlo. */
+  readonly dataError = signal('');
 
   readonly members = signal<Member[]>(DEMO_MEMBERS);
   readonly routines = signal<Routine[]>(DEMO_ROUTINES);
@@ -42,14 +47,10 @@ export class GymDataService {
 
   constructor() {
     if (this.firestore) {
-      collectionData(collection(this.firestore, 'routines'), { idField: 'id' })
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: records => {
-            if (records.length) this.routines.set(records as Routine[]);
-          },
-          error: () => undefined
-        });
+      // Si la coleccion viene vacia dejamos los datos de ejemplo: es un
+      // proyecto recien creado, no una lista que el admin vacio a proposito.
+      this.watch<Routine>('routines', this.routines);
+      this.watch<Membership>('memberships', this.memberships);
     }
     this.destroyRef.onDestroy(() => this.membersSubscription?.unsubscribe());
 
@@ -62,6 +63,17 @@ export class GymDataService {
     });
   }
 
+  private watch<T>(path: string, target: ReturnType<typeof signal<T[]>>) {
+    collectionData(collection(this.firestore!, path), { idField: 'id' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: records => {
+          if (records.length) target.set(records as T[]);
+        },
+        error: () => undefined
+      });
+  }
+
   /** El admin trae todos los socios; el socio, solo su propia ficha. */
   private loadMembers(email: string | null, isAdmin: boolean) {
     if (!this.firestore || !email) return;
@@ -71,8 +83,11 @@ export class GymDataService {
       ? membersCollection
       : query(membersCollection, where('email', '==', email.toLowerCase()));
     this.membersSubscription = collectionData(membersQuery, { idField: 'id' }).subscribe({
+      // Ojo: no recrear la ficha si viene vacia. Esa auto-reparacion existia
+      // para tapar el bug de las dos copias del SDK, y ahora haria que una
+      // baja hecha por el admin se deshiciera sola en el proximo login.
       next: records => this.members.set(records as Member[]),
-      error: () => undefined
+      error: error => this.dataError.set(describeError(error))
     });
   }
 
@@ -96,19 +111,14 @@ export class GymDataService {
 
   // --- Socios ---------------------------------------------------------------
 
-  async saveMember(form: { name: string; email: string; plan: string }, editing: Member | null) {
-    const parts = form.name.trim().split(' ');
-    const initials = ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase();
+  async saveMember(
+    form: { name: string; email: string; plan: string },
+    editing: Member | null,
+    status: Member['status'] = 'Pago'
+  ) {
     const data = {
-      name: form.name.trim(),
-      // Normalizado: el portal del socio busca su ficha por correo.
-      email: form.email.trim().toLowerCase(),
-      plan: form.plan,
-      expires: '21 sep 2026',
-      status: 'Pago' as const,
-      routine: 'Sin asignar',
-      initials,
-      color: '#c7d9b7'
+      ...buildMemberData(form.name, form.email, form.plan),
+      status
     };
 
     if (this.firestore) {
@@ -121,6 +131,66 @@ export class GymDataService {
     } else {
       this.members.update(list => [{ id: Date.now().toString(), ...data }, ...list]);
     }
+  }
+
+  /**
+   * Crea la ficha del socio que acaba de registrarse, si todavia no tiene una.
+   *
+   * Registrarse y estar dado de alta como socio son dos cosas distintas: la
+   * cuenta vive en Firebase Auth y la ficha en `members`. Sin esto, quien se
+   * registra entra pero ve "tu cuenta no esta asociada a un socio".
+   *
+   * Arranca en 'No pago' porque todavia no abono la cuota.
+   */
+  async ensureMemberFor(name: string, email: string) {
+    if (this.findMemberByEmail(email) || this.creatingMember) return;
+    const data = { ...buildMemberData(name, email, 'Plan mensual'), status: 'No pago' as const };
+
+    this.creatingMember = true;
+    try {
+      if (this.firestore) {
+        await addDoc(collection(this.firestore, 'members'), data);
+      } else {
+        this.members.update(list => [{ id: Date.now().toString(), ...data }, ...list]);
+      }
+      this.dataError.set('');
+    } catch (error) {
+      // Antes esto se tragaba en silencio y el socio veia "no estas asociado"
+      // sin ninguna pista de por que.
+      this.dataError.set(describeError(error));
+    } finally {
+      this.creatingMember = false;
+    }
+  }
+
+  /**
+   * Registra el cobro de la cuota: deja al socio en 'Pago' y corre el
+   * vencimiento segun la duracion de su plan.
+   *
+   * Las reglas solo permiten esta escritura al admin, a proposito: si un socio
+   * pudiera hacerlo, se marcaria como pago sin pagar.
+   */
+  async markAsPaid(member: Member) {
+    const dias = this.planDurationInDays(member.plan);
+    const cambios = { status: 'Pago' as const, expires: addDays(new Date(), dias) };
+
+    if (this.firestore && member.id) {
+      try {
+        await updateDoc(doc(this.firestore, 'members', member.id), cambios);
+        this.dataError.set('');
+      } catch (error) {
+        this.dataError.set(describeError(error));
+        return;
+      }
+    }
+    this.members.update(list => list.map(m => m.id === member.id ? { ...m, ...cambios } : m));
+  }
+
+  /** Saca los dias del texto del plan ("30 dias"). Si no matchea, asume un mes. */
+  private planDurationInDays(planName: string): number {
+    const duracion = this.findMembershipByName(planName)?.duration ?? '';
+    const match = duracion.match(/\d+/);
+    return match ? Number(match[0]) : 30;
   }
 
   async removeMember(member: Member) {
@@ -166,8 +236,13 @@ export class GymDataService {
 
   // --- Membresias -----------------------------------------------------------
 
-  saveMembership(form: Omit<Membership, 'id'>, editing: Membership | null) {
+  async saveMembership(form: Omit<Membership, 'id'>, editing: Membership | null) {
     const membership = { ...form, name: form.name.trim() };
+    if (this.firestore) {
+      if (editing?.id) await updateDoc(doc(this.firestore, 'memberships', editing.id), membership);
+      else await addDoc(collection(this.firestore, 'memberships'), membership);
+      return;
+    }
     if (editing) {
       this.memberships.update(list => list.map(m => m.id === editing.id ? { ...m, ...membership } : m));
     } else {
@@ -175,9 +250,51 @@ export class GymDataService {
     }
   }
 
-  deleteMembership(membership: Membership) {
+  async deleteMembership(membership: Membership) {
+    if (this.firestore && membership.id) {
+      await deleteDoc(doc(this.firestore, 'memberships', membership.id));
+      return;
+    }
     this.memberships.update(list => list.filter(item => item.id !== membership.id));
   }
+}
+
+function describeError(error: unknown): string {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code: unknown }).code)
+    : '';
+  if (code.includes('permission-denied')) {
+    return 'Firestore rechazó la operación. Revisá que las reglas estén publicadas.';
+  }
+  if (code.includes('unavailable')) {
+    return 'No hay conexión con Firestore. Revisá tu internet.';
+  }
+  return error instanceof Error ? error.message : 'Error desconocido de Firestore.';
+}
+
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/** Mantiene el formato de fecha que ya usaba el resto de la app. */
+function addDays(desde: Date, dias: number): string {
+  const fecha = new Date(desde);
+  fecha.setDate(fecha.getDate() + dias);
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  return `${dia} ${MESES[fecha.getMonth()]} ${fecha.getFullYear()}`;
+}
+
+/** Campos derivados comunes a toda alta de socio. */
+function buildMemberData(name: string, email: string, plan: string) {
+  const parts = name.trim().split(' ');
+  return {
+    name: name.trim(),
+    // Normalizado: el portal del socio busca su ficha por correo.
+    email: email.trim().toLowerCase(),
+    plan,
+    expires: '21 sep 2026',
+    routine: 'Sin asignar',
+    initials: ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || 'S',
+    color: '#c7d9b7'
+  };
 }
 
 // --- Datos de ejemplo (se usan cuando no hay Firestore) ----------------------

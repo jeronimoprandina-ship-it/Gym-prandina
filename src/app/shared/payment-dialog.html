@@ -30,12 +30,15 @@
       }
 
       <p class="payment-note">
-        Esto es una demostración académica. No se realiza ningún cobro ni se guardan datos bancarios.
+        No se realiza ningún cobro real ni se guardan datos bancarios, pero el socio
+        queda marcado como <strong>Pago</strong> y se le corre el vencimiento.
       </p>
       @if (payment.error()) {
         <p class="payment-error" role="alert">{{ payment.error() }}</p>
       }
-      <button class="primary-button auth-submit" type="submit">Simular pago</button>
+      <button class="primary-button auth-submit" type="submit" [disabled]="payment.submitting()">
+        {{ payment.submitting() ? 'Registrando...' : 'Registrar pago' }}
+      </button>
     </form>
   </div>
 }

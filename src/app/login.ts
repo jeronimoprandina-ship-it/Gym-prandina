@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService, authErrorCode, authErrorMessage } from './auth.service';
+import { GymDataService } from './core/gym-data.service';
 
 type LoginMode = 'login' | 'register' | 'forgot';
 
@@ -18,6 +19,7 @@ export class LoginComponent {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly data = inject(GymDataService);
 
   readonly mode = signal<LoginMode>('login');
   readonly error = signal('');
@@ -51,7 +53,11 @@ export class LoginComponent {
     this.isSubmitting.set(true);
     try {
       if (isRegistering) {
-        await this.auth.register(this.registerForm.name.trim(), email, this.registerForm.password);
+        const name = this.registerForm.name.trim();
+        await this.auth.register(name, email, this.registerForm.password);
+        // Quien se registra queda habilitado como socio en el acto: sin esto
+        // entraria a un portal que le dice que no esta asociado a nadie.
+        await this.data.ensureMemberFor(name, email);
       } else {
         await this.auth.login(email, this.loginForm.password);
       }

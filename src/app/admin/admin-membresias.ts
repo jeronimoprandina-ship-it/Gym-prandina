@@ -30,16 +30,16 @@ export class AdminMembresiasComponent {
     this.isFormOpen.set(false);
   }
 
-  protected save() {
+  protected async save() {
     if (!this.form.name.trim() || this.form.price <= 0) return;
-    this.data.saveMembership(this.form, this.editing());
+    await this.data.saveMembership(this.form, this.editing());
     this.editing.set(null);
     this.isFormOpen.set(false);
   }
 
-  protected remove(membership: Membership) {
+  protected async remove(membership: Membership) {
     if (!confirm(`¿Eliminar ${membership.name}?`)) return;
-    this.data.deleteMembership(membership);
+    await this.data.deleteMembership(membership);
   }
 }
 

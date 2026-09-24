@@ -8,9 +8,10 @@
     "build:hosting": "ng build --configuration production",
     "deploy:hosting": "npm run build:hosting && firebase deploy --only hosting",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "npm run check:deps && ng test",
     "emulators": "firebase emulators:start --only auth --project demo-gym-prandina",
-    "emulators:full": "firebase emulators:start --only auth,firestore --project demo-gym-prandina"
+    "emulators:full": "firebase emulators:start --only auth,firestore --project demo-gym-prandina",
+    "check:deps": "node scripts/check-firebase-deps.mjs"
   },
   "private": true,
   "packageManager": "npm@11.17.0",
@@ -36,5 +37,8 @@
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
     "vitest": "^4.0.8"
+  },
+  "overrides": {
+    "firebase": "$firebase"
   }
 }

@@ -74,8 +74,21 @@
         <input name="name" [(ngModel)]="memberForm.name" required placeholder="Ej. Camila Gómez" />
       </label>
       <label>Correo electrónico
-        <input name="email" type="email" [(ngModel)]="memberForm.email" required placeholder="camila@email.com" />
+        <input name="email" type="email" [(ngModel)]="memberForm.email" required
+               placeholder="camila@email.com" [disabled]="!!editingMember()" />
       </label>
+
+      @if (!editingMember()) {
+        <label>Contraseña de acceso
+          <input name="password" type="text" autocomplete="off" [(ngModel)]="memberForm.password"
+                 required placeholder="Mínimo 6 caracteres" />
+        </label>
+        <p class="payment-note">
+          Con este correo y contraseña el socio va a poder entrar en
+          <strong>Iniciar sesión</strong>. Pasáselos cuando termines.
+        </p>
+      }
+
       <label>Tipo de membresía
         <select name="plan" [(ngModel)]="memberForm.plan">
           <option>Plan mensual</option>
@@ -84,8 +97,16 @@
         </select>
       </label>
 
-      <button class="primary-button" type="submit">
-        {{ editingMember() ? 'Guardar cambios' : 'Guardar socio' }}
+      @if (formError()) {
+        <p class="payment-error" role="alert">{{ formError() }}</p>
+      }
+      @if (formNotice()) {
+        <p class="api-message">{{ formNotice() }}</p>
+      }
+
+      <button class="primary-button" type="submit" [disabled]="isSaving()">
+        @if (isSaving()) { Guardando... }
+        @else { {{ editingMember() ? 'Guardar cambios' : 'Crear socio y su acceso' }} }
       </button>
     </form>
   </div>

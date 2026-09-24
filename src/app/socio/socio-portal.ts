@@ -8,7 +8,7 @@ import { AuthService } from '../auth.service';
 import { ExercisesService } from '../core/exercises.service';
 import { GymDataService } from '../core/gym-data.service';
 import { PaymentService } from '../core/payment.service';
-import { MUSCLE_GROUPS, PLAN_AMOUNTS, WEEK_DAYS, WEEK_SCHEDULE } from '../core/models';
+import { MUSCLE_GROUPS, WEEK_DAYS, WEEK_SCHEDULE } from '../core/models';
 
 type SocioTab = 'resumen' | 'ejercicios' | 'pagos' | 'rutina';
 
@@ -29,7 +29,7 @@ type SocioTab = 'resumen' | 'ejercicios' | 'pagos' | 'rutina';
 })
 export class SocioPortalComponent {
   private readonly auth = inject(AuthService);
-  private readonly data = inject(GymDataService);
+  protected readonly data = inject(GymDataService);
   private readonly payment = inject(PaymentService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -56,9 +56,11 @@ export class SocioPortalComponent {
 
   protected readonly accessMessage = computed(() => {
     if (this.member()) return '';
-    return this.isViewedByAdmin()
-      ? 'No encontramos ese socio.'
-      : 'Tu cuenta todavía no está asociada a un socio. Consultá al administrador.';
+    if (this.isViewedByAdmin()) return 'No encontramos ese socio.';
+    // Si Firestore fallo, decir "consultá al administrador" es enganoso:
+    // el problema es tecnico y conviene que se vea.
+    if (this.data.dataError()) return this.data.dataError();
+    return 'Estamos preparando tu ficha de socio. Recargá en unos segundos.';
   });
 
   protected readonly routine = computed(() => this.data.findRoutineByName(this.member()?.routine));
@@ -85,7 +87,6 @@ export class SocioPortalComponent {
 
   protected managePayment() {
     const member = this.member();
-    if (!member) return;
-    this.payment.open(member.plan, PLAN_AMOUNTS[member.plan] ?? '$15.000', 'Tarjeta');
+    if (member) this.payment.open(member);
   }
 }

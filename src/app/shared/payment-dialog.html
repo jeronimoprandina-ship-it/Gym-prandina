@@ -1,0 +1,66 @@
+@if (payment.isFormOpen()) {
+  <div class="modal-backdrop" (click)="payment.close()">
+    <form class="modal-content payment-modal" (click)="$event.stopPropagation()" (ngSubmit)="payment.confirm()">
+      <button type="button" class="btn-close" (click)="payment.close()">×</button>
+      <p class="eyebrow">SIMULACIÓN DE PAGO</p>
+      <h2>{{ payment.plan() }}</h2>
+
+      <div class="payment-total">
+        <span>Total simulado</span>
+        <strong>{{ payment.amount() }}</strong>
+      </div>
+
+      <div class="payment-methods">
+        <button type="button" [class.active]="payment.method() === 'Tarjeta'"
+                (click)="payment.method.set('Tarjeta')">Tarjeta</button>
+        <button type="button" [class.active]="payment.method() === 'Mercado Pago'"
+                (click)="payment.method.set('Mercado Pago')">Mercado Pago</button>
+      </div>
+
+      <label>Nombre completo
+        <input name="paymentName" [(ngModel)]="payment.form.name" required placeholder="Nombre del titular" />
+      </label>
+      <label>Correo para el comprobante
+        <input name="paymentEmail" type="email" [(ngModel)]="payment.form.email" required placeholder="tu@email.com" />
+      </label>
+      @if (payment.method() === 'Tarjeta') {
+        <label>Últimos 4 números de la tarjeta
+          <input name="lastFour" inputmode="numeric" maxlength="4" [(ngModel)]="payment.form.lastFour" placeholder="1234" />
+        </label>
+      }
+
+      <p class="payment-note">
+        Esto es una demostración académica. No se realiza ningún cobro ni se guardan datos bancarios.
+      </p>
+      @if (payment.error()) {
+        <p class="payment-error" role="alert">{{ payment.error() }}</p>
+      }
+      <button class="primary-button auth-submit" type="submit">Simular pago</button>
+    </form>
+  </div>
+}
+
+@if (payment.isReceiptOpen()) {
+  <div class="modal-backdrop" (click)="payment.closeReceipt()">
+    <div class="modal-content receipt-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-close" (click)="payment.closeReceipt()">×</button>
+      <div class="receipt-check">✓</div>
+      <p class="eyebrow">PAGO SIMULADO</p>
+      <h2>Comprobante listo</h2>
+      <p class="modal-subtitle">Comprobante de demostración preparado para {{ payment.receipt()?.email }}.</p>
+
+      <div class="receipt-details">
+        <span>Número<strong>{{ payment.receipt()?.number }}</strong></span>
+        <span>Plan<strong>{{ payment.receipt()?.plan }}</strong></span>
+        <span>Importe<strong>{{ payment.receipt()?.amount }}</strong></span>
+        <span>Medio de pago<strong>{{ payment.receipt()?.method }}</strong></span>
+        <span>Fecha<strong>{{ payment.receipt()?.date }}</strong></span>
+      </div>
+
+      <div class="receipt-actions">
+        <button class="primary-button" type="button" (click)="payment.downloadReceipt()">Descargar comprobante</button>
+        <button class="outline-button" type="button" (click)="payment.emailReceipt()">Preparar correo</button>
+      </div>
+    </div>
+  </div>
+}

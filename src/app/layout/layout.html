@@ -1,0 +1,61 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <button class="menu-toggle" type="button" (click)="toggleMenu()"
+              [attr.aria-expanded]="isMenuOpen()" aria-label="Abrir opciones">☰</button>
+      <span class="brand-mark">P</span>
+      <span>Prandina Performance Lab</span>
+    </div>
+
+    <div class="workspace-label">{{ isAdmin() ? 'GESTIÓN' : 'MI ENTRENAMIENTO' }}</div>
+
+    @if (isMenuOpen() && isAdmin()) {
+      <nav>
+        <a class="nav-item" routerLink="/admin/resumen" routerLinkActive="active">
+          <span>◈</span> Resumen
+        </a>
+        <a class="nav-item" routerLink="/admin/socios" routerLinkActive="active">
+          <span>♙</span> Socios <b>{{ data.members().length }}</b>
+        </a>
+        <a class="nav-item" routerLink="/admin/rutinas" routerLinkActive="active">
+          <span>▦</span> Rutinas
+        </a>
+        <a class="nav-item" routerLink="/admin/membresias" routerLinkActive="active">
+          <span>▣</span> Membresías
+        </a>
+      </nav>
+    }
+
+    <div class="sidebar-bottom">
+      <div class="user-chip">
+        <span class="avatar small">{{ userInitials() }}</span>
+        <span>
+          <strong>{{ currentUser()?.displayName || 'Mi cuenta' }}</strong>
+          <small>{{ currentUser()?.email }}</small>
+        </span>
+      </div>
+      <button class="session-button" type="button" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">{{ currentDateLabel() }}</p>
+        <h1 class="admin-heading">{{ isAdmin() ? 'Panel administrativo' : 'Portal del socio' }}</h1>
+      </div>
+      <div class="top-actions"><span class="status-chip">Sistema activo</span></div>
+    </header>
+
+    @if (role()) {
+      <router-outlet />
+    } @else {
+      <!-- Firebase todavía está resolviendo el rol: sin esto la pantalla
+           quedaría en blanco unos instantes. -->
+      <section class="panel"><p class="api-message">Cargando tu perfil...</p></section>
+    }
+  </main>
+</div>
+
+<!-- El cobro simulado lo abren tanto el admin como el socio, así que vive acá. -->
+<app-payment-dialog />

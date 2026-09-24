@@ -1,0 +1,66 @@
+[debug] [2026-09-24T01:39:49.320Z] ----------------------------------------------------------------------
+[debug] [2026-09-24T01:39:49.323Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Carlii\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only auth --project demo-gym-prandina
+[debug] [2026-09-24T01:39:49.324Z] CLI Version:   14.26.0
+[debug] [2026-09-24T01:39:49.324Z] Platform:      win32
+[debug] [2026-09-24T01:39:49.324Z] Node Version:  v22.23.2
+[debug] [2026-09-24T01:39:49.324Z] Time:          Wed Sep 23 2026 22:39:49 GMT-0300 (hora estándar de Argentina)
+[debug] [2026-09-24T01:39:49.325Z] ----------------------------------------------------------------------
+[debug] 
+[info] i  emulators: Starting emulators: auth {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: auth"}}
+[info] i  emulators: Detected demo project ID "demo-gym-prandina", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail. {"metadata":{"emulator":{"name":"hub"},"message":"Detected demo project ID \"demo-gym-prandina\", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail."}}
+[debug] [2026-09-24T01:39:49.633Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-09-24T01:39:49.634Z] [auth] Authentication Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-09-24T01:39:49.634Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-09-24T01:39:49.638Z] Emulator locator file path: C:\Users\Carlii\AppData\Local\Temp\hub-demo-gym-prandina.json
+[warn] !  emulators: It seems that you are running multiple instances of the emulator suite for project demo-gym-prandina. This may result in unexpected behavior. 
+[debug] [2026-09-24T01:39:49.639Z] [hub] writing locator at C:\Users\Carlii\AppData\Local\Temp\hub-demo-gym-prandina.json
+[debug] [2026-09-24T01:39:57.574Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌────────────────┬────────────────┬────────────────────────────┐
+│ Emulator       │ Host:Port      │ View in Emulator UI        │
+├────────────────┼────────────────┼────────────────────────────┤
+│ Authentication │ 127.0.0.1:9099 │ http://127.0.0.1:4000/auth │
+└────────────────┴────────────────┴────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 
+[debug] [2026-09-24T01:48:57.109Z] ----------------------------------------------------------------------
+[debug] [2026-09-24T01:48:57.113Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Carlii\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js emulators:start --only auth --project demo-gym-prandina
+[debug] [2026-09-24T01:48:57.113Z] CLI Version:   14.26.0
+[debug] [2026-09-24T01:48:57.113Z] Platform:      win32
+[debug] [2026-09-24T01:48:57.113Z] Node Version:  v22.23.2
+[debug] [2026-09-24T01:48:57.114Z] Time:          Wed Sep 23 2026 22:48:57 GMT-0300 (hora estándar de Argentina)
+[debug] [2026-09-24T01:48:57.114Z] ----------------------------------------------------------------------
+[debug] 
+[info] i  emulators: Starting emulators: auth {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: auth"}}
+[info] i  emulators: Detected demo project ID "demo-gym-prandina", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail. {"metadata":{"emulator":{"name":"hub"},"message":"Detected demo project ID \"demo-gym-prandina\", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail."}}
+[debug] [2026-09-24T01:48:57.426Z] [logging] Logging Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-09-24T01:48:57.426Z] [auth] Authentication Emulator only supports listening on one address (127.0.0.1). Not listening on ::1
+[debug] [2026-09-24T01:48:57.426Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400},{"address":"::1","family":"IPv6","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000},{"address":"::1","family":"IPv6","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}]},"metadata":{"message":"assigned listening specs for emulators"}}
+[debug] [2026-09-24T01:48:57.433Z] Emulator locator file path: C:\Users\Carlii\AppData\Local\Temp\hub-demo-gym-prandina.json
+[warn] !  emulators: It seems that you are running multiple instances of the emulator suite for project demo-gym-prandina. This may result in unexpected behavior. 
+[debug] [2026-09-24T01:48:57.433Z] [hub] writing locator at C:\Users\Carlii\AppData\Local\Temp\hub-demo-gym-prandina.json
+[debug] [2026-09-24T01:49:04.804Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: . If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
+[info] 
+┌─────────────────────────────────────────────────────────────┐
+│ ✔  All emulators ready! It is now safe to connect your app. │
+│ i  View Emulator UI at http://127.0.0.1:4000/               │
+└─────────────────────────────────────────────────────────────┘
+
+┌────────────────┬────────────────┬────────────────────────────┐
+│ Emulator       │ Host:Port      │ View in Emulator UI        │
+├────────────────┼────────────────┼────────────────────────────┤
+│ Authentication │ 127.0.0.1:9099 │ http://127.0.0.1:4000/auth │
+└────────────────┴────────────────┴────────────────────────────┘
+  Emulator Hub host: 127.0.0.1 port: 4400
+  Other reserved ports: 4500
+
+Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
+ 

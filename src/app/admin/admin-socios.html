@@ -1,0 +1,114 @@
+<section class="welcome-row">
+  <div>
+    <div class="welcome-title"><h2>Socios</h2></div>
+    <p>Tené todo bajo control y ayudá a tus socios a alcanzar sus objetivos.</p>
+  </div>
+  <button class="primary-button small-button socios-add-button" (click)="openMemberModal()">
+    <span>＋</span> Nuevo socio
+  </button>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div><h3>Socios</h3><p>Gestión de pagos, edición y estado de membresías.</p></div>
+  </div>
+
+  <div class="toolbar">
+    <label class="search">
+      <span>⌕</span>
+      <input [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+             name="search" placeholder="Buscar socio..." />
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>SOCIO</th><th>MEMBRESÍA</th><th>VENCIMIENTO</th>
+          <th>RUTINA</th><th>ESTADO</th><th>ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (member of filteredMembers(); track member.id) {
+          <tr>
+            <td>
+              <div class="member-name">
+                <span class="avatar" [style.background]="member.color">{{ member.initials }}</span>
+                <span><strong>{{ member.name }}</strong><small>{{ member.email }}</small></span>
+              </div>
+            </td>
+            <td>{{ member.plan }}</td>
+            <td>{{ member.expires }}</td>
+            <td>
+              <span class="routine-tag" [class.empty]="member.routine === 'Sin asignar'">{{ member.routine }}</span>
+            </td>
+            <td>
+              <span class="status" [class.paid]="member.status === 'Pago'"
+                    [class.unpaid]="member.status === 'No pago'">{{ member.status }}</span>
+            </td>
+            <td class="actions">
+              <button class="more-button" (click)="viewPortal(member)" title="Ver portal del socio">👤</button>
+              <button class="more-button" (click)="openMemberModal(member)" title="Editar socio">✎</button>
+              <button class="more-button" (click)="openRoutineModal(member)" title="Asignar rutina">↗</button>
+              <button class="more-button" (click)="managePayment(member)" title="Gestionar pago">💳</button>
+              <button class="more-button danger" (click)="removeMember(member)" title="Eliminar socio">×</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6"><p class="api-message">No hay socios que coincidan con la búsqueda.</p></td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+@if (isMemberModalOpen()) {
+  <div class="modal-backdrop" (click)="closeMemberModal()">
+    <form class="modal-content" (click)="$event.stopPropagation()" (ngSubmit)="saveMember()">
+      <button type="button" class="btn-close" (click)="closeMemberModal()">×</button>
+      <p class="eyebrow">{{ editingMember() ? 'EDITAR REGISTRO' : 'NUEVO REGISTRO' }}</p>
+      <h2>{{ editingMember() ? 'Editar socio' : 'Agregar socio' }}</h2>
+
+      <label>Nombre completo
+        <input name="name" [(ngModel)]="memberForm.name" required placeholder="Ej. Camila Gómez" />
+      </label>
+      <label>Correo electrónico
+        <input name="email" type="email" [(ngModel)]="memberForm.email" required placeholder="camila@email.com" />
+      </label>
+      <label>Tipo de membresía
+        <select name="plan" [(ngModel)]="memberForm.plan">
+          <option>Plan mensual</option>
+          <option>Plan trimestral</option>
+          <option>Plan anual</option>
+        </select>
+      </label>
+
+      <button class="primary-button" type="submit">
+        {{ editingMember() ? 'Guardar cambios' : 'Guardar socio' }}
+      </button>
+    </form>
+  </div>
+}
+
+@if (isRoutineModalOpen()) {
+  <div class="modal-backdrop" (click)="closeRoutineModal()">
+    <div class="modal-content routine-modal" (click)="$event.stopPropagation()">
+      <button class="btn-close" (click)="closeRoutineModal()">×</button>
+      <p class="eyebrow">ASIGNAR PLAN</p>
+      <h2>{{ selectedMember()?.name }}</h2>
+      <p class="modal-subtitle">Elegí una rutina armada para este socio.</p>
+
+      @for (routine of data.routines(); track routine.name) {
+        <button class="routine-choice" (click)="assignRoutine(routine)">
+          <span class="routine-symbol">↗</span>
+          <span>
+            <strong>{{ routine.name }}</strong>
+            <small>{{ routine.level }} · {{ routine.exercises }} ejercicios · {{ routine.duration }}</small>
+          </span>
+          <span>→</span>
+        </button>
+      }
+    </div>
+  </div>
+}

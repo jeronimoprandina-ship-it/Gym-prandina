@@ -1,0 +1,147 @@
+<section class="panel socio-dashboard">
+  @if (accessMessage()) {
+    <p class="api-message error-text">{{ accessMessage() }}</p>
+  }
+
+  @if (member(); as socio) {
+    <div class="socio-header">
+      @if (isViewedByAdmin()) {
+        <button class="btn-back" (click)="back()">← Volver</button>
+      }
+      <div class="socio-info">
+        <div class="socio-avatar" [style.background]="socio.color">{{ socio.initials }}</div>
+        <div>
+          <h2>{{ socio.name }}</h2>
+          <p class="socio-email">{{ socio.email }}</p>
+        </div>
+      </div>
+      <div class="socio-status-pill" [class.paid]="socio.status === 'Pago'" [class.unpaid]="socio.status === 'No pago'">
+        {{ socio.status }}
+      </div>
+    </div>
+
+    <div class="socio-tabs">
+      <button type="button" class="socio-tab" [class.active]="tab() === 'resumen'" (click)="setTab('resumen')">Resumen</button>
+      <button type="button" class="socio-tab" [class.active]="tab() === 'ejercicios'" (click)="setTab('ejercicios')">Biblioteca</button>
+      <button type="button" class="socio-tab" [class.active]="tab() === 'pagos'" (click)="setTab('pagos')">Cuota</button>
+      <button type="button" class="socio-tab" [class.active]="tab() === 'rutina'" (click)="setTab('rutina')">Rutina</button>
+    </div>
+
+    @switch (tab()) {
+      @case ('resumen') {
+        <div class="socio-metrics">
+          <div class="metric-card"><span class="metric-label">Plan actual</span><strong>{{ socio.plan }}</strong></div>
+          <div class="metric-card"><span class="metric-label">Vencimiento</span><strong>{{ socio.expires }}</strong></div>
+          <div class="metric-card">
+            <span class="metric-label">Estado</span>
+            <span class="status" [class.paid]="socio.status === 'Pago'" [class.unpaid]="socio.status === 'No pago'">{{ socio.status }}</span>
+          </div>
+        </div>
+
+        <div class="socio-readonly-grid">
+          <div class="socio-panel">
+            <h3>Rutina (solo ver)</h3>
+            <div class="payment-info">
+              <div class="payment-item"><span>Rutina asignada</span><strong>{{ routine()?.name || socio.routine || 'Sin asignar' }}</strong></div>
+              <div class="payment-item"><span>Nivel</span><strong>{{ routine()?.level || '—' }}</strong></div>
+              <div class="payment-item"><span>Duración</span><strong>{{ routine()?.duration || '—' }}</strong></div>
+              <div class="payment-item"><span>Enfoque</span><strong>{{ routine()?.focus || '—' }}</strong></div>
+            </div>
+          </div>
+
+          <div class="socio-panel">
+            <h3>Membresía (solo ver)</h3>
+            <div class="payment-info">
+              <div class="payment-item"><span>Plan</span><strong>{{ membership()?.name || socio.plan }}</strong></div>
+              <div class="payment-item">
+                <span>Precio</span>
+                <strong>{{ membership() ? (membership()!.price | currency:'ARS':'symbol':'1.0-0') : '—' }}</strong>
+              </div>
+              <div class="payment-item"><span>Duración</span><strong>{{ membership()?.duration || '—' }}</strong></div>
+              <div class="payment-item"><span>Descripción</span><strong>{{ membership()?.description || 'Sin descripción' }}</strong></div>
+            </div>
+          </div>
+        </div>
+      }
+
+      @case ('ejercicios') {
+        <div class="socio-exercise-section">
+          <h3>Biblioteca de ejercicios</h3>
+          <div class="api-filters">
+            <label class="search">
+              <span>⌕</span>
+              <input name="exerciseSearch" [ngModel]="search()" (ngModelChange)="search.set($event)"
+                     placeholder="Buscar ejercicio o músculo..." />
+            </label>
+            <select name="exerciseCategory" [ngModel]="category()" (ngModelChange)="category.set($event)"
+                    aria-label="Filtrar por grupo muscular">
+              @for (option of categories; track option) { <option [value]="option">{{ option }}</option> }
+            </select>
+          </div>
+
+          @if (exercises.loading()) {
+            <p class="api-message">Cargando ejercicios...</p>
+          } @else if (exercises.error()) {
+            <p class="api-message error-text">{{ exercises.error() }}</p>
+          } @else {
+            <div class="exercise-grid">
+              @for (exercise of filteredExercises(); track exercise.id) {
+                <article class="exercise-card">
+                  <div class="exercise-top">
+                    <span class="exercise-icon">↗</span>
+                    <span class="api-category">{{ exercise.category?.name || 'Entrenamiento' }}</span>
+                  </div>
+                  <h4>{{ exercises.nameOf(exercise) }}</h4>
+                  <div class="exercise-tags">
+                    @for (group of exercises.groupsOf(exercise); track group) { <span>{{ group }}</span> }
+                  </div>
+                  <p class="exercise-description">
+                    <strong>Cómo hacerlo</strong>{{ exercises.descriptionOf(exercise) }}
+                  </p>
+                </article>
+              } @empty {
+                <p class="api-message">No encontramos ejercicios con esos filtros.</p>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @case ('pagos') {
+        <div class="socio-panel">
+          <h3>Vista cuota pago</h3>
+          <div class="payment-info">
+            <div class="payment-item"><span>Última cuota</span><strong>{{ socio.plan }}</strong></div>
+            <div class="payment-item"><span>Próximo vencimiento</span><strong>{{ socio.expires }}</strong></div>
+            <div class="payment-item">
+              <span>Estado del pago</span>
+              <span class="status" [class.paid]="socio.status === 'Pago'" [class.unpaid]="socio.status === 'No pago'">{{ socio.status }}</span>
+            </div>
+            <button class="primary-button" style="margin-top: 1rem; width: 100%;" (click)="managePayment()">
+              Gestionar pago
+            </button>
+          </div>
+        </div>
+      }
+
+      @case ('rutina') {
+        <div class="socio-panel">
+          <h3>Vista rutina calendario</h3>
+          <div class="weekly-schedule">
+            @for (day of weekDays; track day) {
+              <div class="day-card">
+                <div class="day-name">{{ day }}</div>
+                <div class="day-workout">
+                  <strong>{{ weekSchedule[day]?.name || 'Descanso' }}</strong>
+                  @if (weekSchedule[day]; as plan) {
+                    <small>{{ plan.exercises }} ejercicios · {{ plan.focus }}</small>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  }
+</section>

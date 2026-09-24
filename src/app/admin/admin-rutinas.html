@@ -1,0 +1,106 @@
+<section class="welcome-row">
+  <div>
+    <div class="welcome-title"><h2>Rutinas</h2></div>
+    <p>Tené todo bajo control y ayudá a tus socios a alcanzar sus objetivos.</p>
+  </div>
+  <button class="primary-button small-button socios-add-button" (click)="openForm()">
+    <span>＋</span> Nueva rutina
+  </button>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div><h3>Rutinas</h3><p>Editar, crear, eliminar y ver ejercicios asociados.</p></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>NOMBRE</th><th>NIVEL</th><th>DURACIÓN</th><th>ENFOQUE</th><th>EJERCICIOS</th><th>ACCIONES</th></tr>
+      </thead>
+      <tbody>
+        @for (routine of data.routines(); track routine.id ?? routine.name) {
+          <tr>
+            <td><strong>{{ routine.name }}</strong></td>
+            <td>{{ routine.level }}</td>
+            <td>{{ routine.duration }}</td>
+            <td>{{ routine.focus }}</td>
+            <td>{{ routine.exercises }}</td>
+            <td class="actions">
+              <button class="more-button" (click)="openForm(routine)" title="Editar rutina">✎</button>
+              <button class="more-button" (click)="openExercises(routine)" title="Ver ejercicios">↗</button>
+              <button class="more-button danger" (click)="remove(routine)" title="Eliminar rutina">×</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6"><p class="api-message">Todavía no hay rutinas cargadas.</p></td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
+
+@if (isFormOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <form class="modal-content auth-modal" (click)="$event.stopPropagation()" (ngSubmit)="save()">
+      <button type="button" class="btn-close" (click)="closeForm()">×</button>
+      <p class="eyebrow">ADMINISTRAR RUTINAS</p>
+      <h2>{{ editing() ? 'Editar rutina' : 'Nueva rutina' }}</h2>
+      <p class="modal-subtitle">Agregá o modificá un plan para asignarlo después a tus socios.</p>
+
+      <label>Nombre de la rutina
+        <input name="routineName" [(ngModel)]="form.name" required placeholder="Ej. Pecho y tríceps" />
+      </label>
+      <label>Nivel
+        <select name="routineLevel" [(ngModel)]="form.level">
+          <option>Principiante</option><option>Intermedio</option><option>Avanzado</option>
+        </select>
+      </label>
+      <label>Enfoque
+        <input name="routineFocus" [(ngModel)]="form.focus" required placeholder="Ej. Tren superior" />
+      </label>
+      <div class="routine-form-row">
+        <label>Duración
+          <input name="routineDuration" [(ngModel)]="form.duration" required placeholder="45 min" />
+        </label>
+        <label>Ejercicios
+          <input name="routineExercises" type="number" min="1" [(ngModel)]="form.exercises" required />
+        </label>
+      </div>
+
+      <button class="primary-button auth-submit" type="submit">
+        {{ editing() ? 'Guardar cambios' : 'Agregar rutina' }}
+      </button>
+    </form>
+  </div>
+}
+
+@if (isExercisesOpen()) {
+  <div class="modal-backdrop" (click)="closeExercises()">
+    <div class="modal-content routine-modal" (click)="$event.stopPropagation()">
+      <button type="button" class="btn-close" (click)="closeExercises()">×</button>
+      <p class="eyebrow">EJERCICIOS</p>
+      <h2>{{ viewingRoutine()?.name }}</h2>
+      <p class="modal-subtitle">Vista rápida de la rutina y recomendaciones de trabajo.</p>
+
+      @if (sampleExercises().length) {
+        <div class="exercise-grid">
+          @for (exercise of sampleExercises(); track exercise.id) {
+            <article class="exercise-card">
+              <div class="exercise-top">
+                <span class="exercise-icon">↗</span>
+                <span class="api-category">{{ exercise.category?.name || 'Entrenamiento' }}</span>
+              </div>
+              <h4>{{ exercises.nameOf(exercise) }}</h4>
+              <div class="exercise-tags">
+                @for (group of exercises.groupsOf(exercise); track group) { <span>{{ group }}</span> }
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <p class="api-message">No hay ejercicios disponibles para mostrar.</p>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,68 @@
+<section class="welcome-row">
+  <div>
+    <div class="welcome-title"><h2>Resumen</h2></div>
+    <p>Tené todo bajo control y ayudá a tus socios a alcanzar sus objetivos.</p>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <div class="stat-icon green">♙</div>
+    <div><span>Socios activos</span><strong>{{ data.activeMembersCount() }}</strong><small class="positive">Datos en vivo</small></div>
+  </article>
+  <article class="stat-card">
+    <div class="stat-icon blue">◷</div>
+    <div><span>Por vencer</span><strong>{{ data.expiringMembersCount() }}</strong><small class="warning">Requieren atención</small></div>
+  </article>
+  <article class="stat-card">
+    <div class="stat-icon orange">▤</div>
+    <div><span>Rutinas asignadas</span><strong>{{ data.assignedRoutinesCount() }}</strong><small class="positive">Datos en vivo</small></div>
+  </article>
+  <article class="stat-card">
+    <div class="stat-icon pink">$</div>
+    <div><span>Ingresos del mes</span><strong>{{ incomeDisplay() }}</strong><small class="positive">↑ 16% <em>vs. mes anterior</em></small></div>
+  </article>
+  <article class="stat-card">
+    <div class="stat-icon red">◌</div>
+    <div><span>Gastos del mes</span><strong>{{ expensesDisplay() }}</strong><small class="warning">↓ 8% <em>vs. mes anterior</em></small></div>
+  </article>
+</section>
+
+<section class="summary-panel panel">
+  <div class="panel-heading">
+    <div><h3>Estadísticas</h3><p>Rendimiento general del gimnasio en el último mes</p></div>
+  </div>
+  <div class="summary-kpis">
+    <div class="summary-kpi"><span>Ingresos netos</span><strong>{{ netDisplay() }}</strong></div>
+    <div class="summary-kpi"><span>Asistencia</span><strong>{{ metrics.attendance }}%</strong></div>
+    <div class="summary-kpi"><span>Adherencia</span><strong>{{ metrics.adherence }}%</strong></div>
+    <div class="summary-kpi"><span>Retención</span><strong>{{ metrics.retention }}%</strong></div>
+  </div>
+  <div class="progress-list">
+    <div class="progress-item">
+      <label>Socios activos</label>
+      <div class="progress-track"><span [style.width.%]="attendanceProgress()"></span></div>
+      <strong>{{ metrics.attendance }}%</strong>
+    </div>
+    <div class="progress-item">
+      <label>Rutinas cumplidas</label>
+      <div class="progress-track"><span [style.width.%]="metrics.adherence"></span></div>
+      <strong>{{ metrics.adherence }}%</strong>
+    </div>
+    <div class="progress-item">
+      <label>Retención anual</label>
+      <div class="progress-track"><span [style.width.%]="metrics.retention"></span></div>
+      <strong>{{ metrics.retention }}%</strong>
+    </div>
+  </div>
+</section>
+
+<section class="expense-panel panel">
+  <div class="panel-heading"><div><h3>Gastos</h3><p>Control de egresos del mes</p></div></div>
+  <div class="expense-total"><span>Total mensual</span><strong>{{ expensesDisplay() }}</strong></div>
+  <div class="expense-list">
+    @for (expense of expenses; track expense.label) {
+      <div class="expense-item"><span>{{ expense.label }}</span><strong>{{ expense.amount }}</strong></div>
+    }
+  </div>
+</section>

@@ -1,24 +1,46 @@
 rules_version = '2';
 
+// El rol NO se deduce del correo. Es admin quien tenga un documento en
+// `admins/{uid}`, y esa colección solo se escribe desde la consola de Firebase
+// (o con el Admin SDK), nunca desde la app. Así el cliente no puede ascenderse
+// a sí mismo registrando una cuenta con un dominio elegido a dedo.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /members/{memberId} {
-      allow read: if request.auth != null && (
-        request.auth.token.role == 'admin' ||
-        request.auth.token.email.matches('.*@admin\\.com$') ||
-        resource.data.email == request.auth.token.email
-      );
-      allow write: if request.auth != null && (
-        request.auth.token.role == 'admin' ||
-        request.auth.token.email.matches('.*@admin\\.com$')
-      );
+
+    function estaAutenticado() {
+      return request.auth != null;
     }
+
+    function esAdmin() {
+      return estaAutenticado()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Cada usuario puede leer únicamente su propio documento, que es lo que la
+    // app necesita para saber si mostrar el panel o el portal del socio.
+    // Nadie puede escribir acá desde el cliente.
+    match /admins/{uid} {
+      allow read: if estaAutenticado() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // El admin ve y edita todos los socios. El socio solo lee su propia ficha,
+    // que se vincula por correo (guardado siempre en minúsculas desde la app).
+    match /members/{memberId} {
+      allow read: if esAdmin()
+        || (estaAutenticado() && resource.data.email == request.auth.token.email);
+      allow write: if esAdmin();
+    }
+
+    // Las rutinas las lee cualquier usuario con sesión; solo el admin las edita.
     match /routines/{routineId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (
-        request.auth.token.role == 'admin' ||
-        request.auth.token.email.matches('.*@admin\\.com$')
-      );
+      allow read: if estaAutenticado();
+      allow write: if esAdmin();
+    }
+
+    // Todo lo que no esté contemplado arriba queda cerrado.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

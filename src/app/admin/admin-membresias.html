@@ -1,0 +1,65 @@
+<section class="welcome-row">
+  <div>
+    <div class="welcome-title"><h2>Membresías</h2></div>
+    <p>Tené todo bajo control y ayudá a tus socios a alcanzar sus objetivos.</p>
+  </div>
+  <button class="primary-button small-button socios-add-button" (click)="openForm()">
+    <span>＋</span> Nueva membresía
+  </button>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div><h3>Membresías</h3><p>Gestionar planes, precios y descripción de membresías.</p></div>
+  </div>
+
+  <div class="membership-grid">
+    @for (membership of data.memberships(); track membership.id; let i = $index) {
+      <article class="membership-card" [class.featured]="i === 1">
+        <span class="membership-badge">{{ membership.name }}</span>
+        <div class="membership-price">
+          <strong>{{ membership.price | currency:'ARS':'symbol':'1.0-0' }}</strong>
+          <small>/ {{ membership.duration }}</small>
+        </div>
+        <p class="membership-description">{{ membership.description }}</p>
+        <ul class="membership-benefits">
+          <li>Acceso ilimitado</li>
+          <li>Seguimiento del progreso</li>
+          <li>Atención prioritaria</li>
+        </ul>
+        <div class="membership-actions">
+          <button class="outline-button" type="button" (click)="openForm(membership)">Editar</button>
+          <button class="more-button danger" type="button" (click)="remove(membership)" title="Eliminar membresía">×</button>
+        </div>
+      </article>
+    }
+  </div>
+</section>
+
+@if (isFormOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <form class="modal-content auth-modal membership-form" (click)="$event.stopPropagation()" (ngSubmit)="save()">
+      <button type="button" class="btn-close" (click)="closeForm()">×</button>
+      <p class="eyebrow">{{ editing() ? 'EDITAR MEMBRESÍA' : 'NUEVA MEMBRESÍA' }}</p>
+      <h2>{{ editing() ? 'Editar plan' : 'Crear plan' }}</h2>
+
+      <label>Nombre del plan
+        <input name="membershipName" [(ngModel)]="form.name" required placeholder="Ej. Plan mensual" />
+      </label>
+      <label>Precio (ARS)
+        <input name="membershipPrice" type="number" min="0" step="1000" [(ngModel)]="form.price" required placeholder="15000" />
+      </label>
+      <label>Duración
+        <input name="membershipDuration" [(ngModel)]="form.duration" required placeholder="Ej. 30 días" />
+      </label>
+      <label class="description-field">Descripción
+        <textarea name="membershipDescription" [(ngModel)]="form.description"
+                  placeholder="Ej. Acceso ilimitado a todas las instalaciones"></textarea>
+      </label>
+
+      <button class="primary-button auth-submit" type="submit">
+        {{ editing() ? 'Guardar cambios' : 'Crear membresía' }}
+      </button>
+    </form>
+  </div>
+}

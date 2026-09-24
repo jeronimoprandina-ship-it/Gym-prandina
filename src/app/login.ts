@@ -1,95 +1,118 @@
-import { Component, Optional } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { Auth } from '@angular/fire/auth';
-import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService, authErrorCode, authErrorMessage } from './auth.service';
+
+type LoginMode = 'login' | 'register' | 'forgot';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './login.html',
   styleUrl: './login.css'
 })
 export class LoginComponent {
-  constructor(@Optional() private auth: Auth | null, private router: Router) {}
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
-  mode: 'login' | 'register' | 'forgot' = 'login';
-  error = '';
-  resetSent = false;
-  isSubmitting = false;
-  login = { email: '', password: '' };
-  register = { name: '', email: '', password: '', confirmPassword: '' };
+  readonly mode = signal<LoginMode>('login');
+  readonly error = signal('');
+  readonly resetSent = signal(false);
+  readonly isSubmitting = signal(false);
 
-  private normalizeEmail(value: string) {
-    const email = value.trim().toLowerCase();
-    return email.includes('@') ? email : `${email}@admin.com`;
-  }
+  loginForm = { email: '', password: '' };
+  registerForm = { name: '', email: '', password: '', confirmPassword: '' };
 
-  async resetPassword() {
-    this.error = '';
-    this.resetSent = false;
-    if (!this.auth) {
-      this.error = 'Firebase Authentication no está disponible.';
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(this.auth, this.login.email);
-      this.resetSent = true;
-    } catch (error: unknown) {
-      const code = error instanceof Error ? error.message : '';
-      this.error = code.includes('auth/user-not-found')
-        ? 'No encontramos una cuenta con ese correo.'
-        : 'Ingresá un correo válido para recuperar tu contraseña.';
-    }
+  setMode(mode: LoginMode) {
+    this.mode.set(mode);
+    this.error.set('');
+    this.resetSent.set(false);
   }
 
   async submit() {
-    this.error = '';
-    this.isSubmitting = true;
-    if (!this.auth) {
-      this.error = 'Firebase Authentication no está disponible.';
-      this.isSubmitting = false;
+    if (this.isSubmitting()) return;
+    this.error.set('');
+
+    const isRegistering = this.mode() === 'register';
+    const email = normalizeEmail(isRegistering ? this.registerForm.email : this.loginForm.email);
+
+    const problem = isRegistering
+      ? this.validateRegistration(email)
+      : this.validateLogin(email);
+    if (problem) {
+      this.error.set(problem);
       return;
     }
-    const auth = this.auth;
 
+    this.isSubmitting.set(true);
     try {
-      const timeout = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('auth-timeout')), 10000);
-      });
-      const authOperation = async () => {
-      if (this.mode === 'login') {
-        await signInWithEmailAndPassword(auth, this.normalizeEmail(this.login.email), this.login.password);
+      if (isRegistering) {
+        await this.auth.register(this.registerForm.name.trim(), email, this.registerForm.password);
       } else {
-        if (this.register.password.length < 6) {
-          this.error = 'La contraseña debe tener al menos 6 caracteres.';
-          return;
-        }
-        if (this.register.password !== this.register.confirmPassword) {
-          this.error = 'Las contraseñas no coinciden.';
-          return;
-        }
-        const credentials = await createUserWithEmailAndPassword(auth, this.normalizeEmail(this.register.email), this.register.password);
-        await updateProfile(credentials.user, { displayName: this.register.name });
+        await this.auth.login(email, this.loginForm.password);
       }
-      };
-      await Promise.race([authOperation(), timeout]);
-      await this.router.navigateByUrl('/dashboard');
-    } catch (error: unknown) {
-      const code = typeof error === 'object' && error !== null && 'code' in error
-        ? String((error as { code: string }).code)
-        : error instanceof Error ? error.message : '';
-      if (code.includes('auth/operation-not-allowed')) this.error = 'Activá Email/Password en Firebase Console.';
-      else if (code.includes('auth/email-already-in-use')) this.error = 'Ese correo ya está registrado. Iniciá sesión.';
-      else if (code.includes('auth/invalid-credential') || code.includes('auth/wrong-password') || code.includes('auth/user-not-found')) this.error = 'El correo o la contraseña no son correctos.';
-      else if (code.includes('auth/invalid-email')) this.error = 'Ingresá un correo electrónico válido.';
-      else if (code.includes('auth/invalid-api-key')) this.error = 'La configuración de Firebase es inválida.';
-      else if (code.includes('auth-timeout')) this.error = 'Firebase está tardando demasiado. Revisá tu conexión e intentá nuevamente.';
-      else this.error = 'No se pudo conectar con Firebase. Revisá los datos e intentá nuevamente.';
+      await this.router.navigateByUrl(this.returnUrl());
+    } catch (error) {
+      this.error.set(authErrorMessage(error));
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
+
+  async sendReset() {
+    if (this.isSubmitting()) return;
+    this.error.set('');
+    this.resetSent.set(false);
+
+    const email = normalizeEmail(this.loginForm.email);
+    if (!EMAIL_PATTERN.test(email)) {
+      this.error.set('Ingresá un correo electrónico válido.');
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    try {
+      await this.auth.resetPassword(email);
+      this.resetSent.set(true);
+    } catch (error) {
+      const code = authErrorCode(error);
+      if (code.includes('network') || code.includes('timeout')) {
+        this.error.set(authErrorMessage(error));
+      } else {
+        // Un "esa cuenta no existe" revelaría qué correos están registrados,
+        // así que respondemos siempre lo mismo.
+        this.resetSent.set(true);
+      }
+    } finally {
+      this.isSubmitting.set(false);
+    }
+  }
+
+  private validateLogin(email: string): string {
+    if (!EMAIL_PATTERN.test(email)) return 'Ingresá un correo electrónico válido.';
+    if (!this.loginForm.password) return 'Ingresá tu contraseña.';
+    return '';
+  }
+
+  private validateRegistration(email: string): string {
+    if (this.registerForm.name.trim().length < 2) return 'Ingresá tu nombre completo.';
+    if (!EMAIL_PATTERN.test(email)) return 'Ingresá un correo electrónico válido.';
+    if (this.registerForm.password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
+    if (this.registerForm.password !== this.registerForm.confirmPassword) return 'Las contraseñas no coinciden.';
+    return '';
+  }
+
+  /** Solo aceptamos rutas internas, para que `returnUrl` no redirija fuera del sitio. */
+  private returnUrl(): string {
+    const target = this.route.snapshot.queryParamMap.get('returnUrl') ?? '';
+    return target.startsWith('/') && !target.startsWith('//') ? target : '/dashboard';
+  }
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
 }

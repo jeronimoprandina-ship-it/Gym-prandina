@@ -31,15 +31,53 @@ export class GymDataService {
   readonly routines = signal<Routine[]>(DEMO_ROUTINES);
   readonly memberships = signal<Membership[]>(DEMO_MEMBERSHIPS);
 
-  /** Metricas del panel. Hoy son fijas: no hay una fuente real todavia. */
+  /**
+   * Metricas que todavia NO salen de datos reales.
+   *
+   * `income` y `net` ya no estan aca: se calculan mas abajo a partir de los
+   * socios. El resto sigue fijo porque no hay de donde sacarlo (haria falta
+   * registro de asistencia y una caja de gastos).
+   */
   readonly summaryMetrics = {
-    income: 1240000,
     expenses: 480000,
-    net: 760000,
     attendance: 84,
     adherence: 72,
     retention: 91
   };
+
+  /**
+   * Ingreso mensual de las membresias vigentes.
+   *
+   * Suma solo a los socios en 'Pago': quien no abono todavia no es un ingreso.
+   *
+   * Cada plan se lleva a su equivalente mensual, asi un socio anual no infla
+   * el mes doce veces. Un socio con plan anual de $150.000 aporta ~$12.300 por
+   * mes, no $150.000.
+   *
+   * OJO: esto es el valor recurrente de las membresias activas, no la
+   * facturacion del mes calendario. Para eso haria falta guardar la fecha de
+   * cada pago, que hoy el modelo no tiene.
+   */
+  readonly monthlyIncome = computed(() =>
+    this.members()
+      .filter(member => member.status === 'Pago')
+      .reduce((total, member) => total + this.monthlyValueOf(member.plan), 0)
+  );
+
+  /** Ingresos menos gastos. Los gastos siguen siendo un valor fijo. */
+  readonly monthlyNet = computed(() => this.monthlyIncome() - this.summaryMetrics.expenses);
+
+  /**
+   * Valor mensual equivalente de un plan, tomando un mes como 30 dias.
+   * Mensual (30d) -> precio entero. Trimestral (90d) -> precio / 3.
+   */
+  private monthlyValueOf(planName: string): number {
+    const membership = this.findMembershipByName(planName);
+    if (!membership) return 0;
+    const dias = Number(membership.duration.match(/\d+/)?.[0] ?? 30);
+    const meses = dias / 30;
+    return meses > 0 ? membership.price / meses : membership.price;
+  }
 
   readonly activeMembersCount = computed(() => this.members().filter(m => m.status === 'Pago').length);
   readonly expiringMembersCount = computed(() => this.members().filter(m => m.status === 'No pago').length);

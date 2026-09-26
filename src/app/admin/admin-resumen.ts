@@ -11,9 +11,10 @@ export class AdminResumenComponent {
   protected readonly data = inject(GymDataService);
   protected readonly metrics = this.data.summaryMetrics;
 
-  protected readonly incomeDisplay = computed(() => money(this.metrics.income));
+  // Ingresos y neto salen de los socios reales; los gastos siguen fijos.
+  protected readonly incomeDisplay = computed(() => money(this.data.monthlyIncome()));
   protected readonly expensesDisplay = computed(() => money(this.metrics.expenses));
-  protected readonly netDisplay = computed(() => money(this.metrics.net));
+  protected readonly netDisplay = computed(() => money(this.data.monthlyNet()));
   protected readonly attendanceProgress = computed(() => Math.min(this.metrics.attendance, 100));
 
   /** Fijos por ahora: no hay una fuente real de gastos todavía. */
